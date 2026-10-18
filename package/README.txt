@@ -1,5 +1,5 @@
-﻿SMITE 2 Patcher — one-click optimization for NVIDIA RTX cards
-==============================================================
+﻿SMITE 2 Patcher — one-click lag & freeze fix for NVIDIA RTX cards
+===================================================================
 https://github.com/RiseFox/smite2-patcher
 (Українська інструкція — у файлі README-UA.txt)
 
@@ -22,10 +22,28 @@ HOW TO USE (once)
 Then just launch the game as usual. You will not need the patcher again.
 
 
+WHAT IT FIXES
+
+Fixed for you:
+• DLSS not really working because Intel XeFG takes over the frames
+  (stutter, FPS drops, a busy CPU).
+• Uneven frames with frame generation — the frame cap keeps them
+  just under your monitor's refresh rate.
+• FPS drops from settings too heavy for your card.
+Fixed by one setting or habit (see below):
+• Short freezes after Alt-Tab or a click on the second monitor.
+• Freezes in god select after an update (shader compilation).
+• Leftover glitches from the old DLSS files — update DLSS.
+Not fixable from outside (only the game's developers can fix these):
+• A rare short hitch when the game flushes its font cache, and the
+  pause while a match loads.
+
+
 WHAT EXACTLY CHANGES
 
 • The SMITE 2 profile in the NVIDIA driver:
-  – the newer DLSS model (Preset K);
+  – the newer DLSS model (Preset K). If you already picked a DLSS
+    preset in DLSS Swapper or the NVIDIA App, yours stays;
   – frame generation at exactly 2X — only on RTX 40/50 with a monitor
     of 200 Hz or more (at 90–165 Hz it would cut real frames, so it stays off);
   – together with frame generation, a frame cap just below the monitor
@@ -70,11 +88,24 @@ TIPS
   freezes for a moment.
 • After a game or driver update, start with a practice match: the first
   time gods and skins load, shaders get compiled (short hitches).
-• Optional: update the game's DLSS files with DLSS Swapper:
+
+
+RECOMMENDED: UPDATE DLSS WITH DLSS SWAPPER
+
+The game ships older DLSS files. Swapping in the newest ones removed part
+of the remaining glitches and hitches in testing:
   https://github.com/beeradmoore/dlss-swapper
-  The patcher already makes the driver use the newest DLSS model, so this
-  is optional. DLSS Swapper replaces DLLs in the game folder; Steam's
-  "Verify integrity of game files" restores the originals. In an online
-  game this is at your own risk.
+1. In DLSS Swapper find SMITE 2 and swap DLSS, DLSS Frame Generation and
+   DLSS Ray Reconstruction to the newest versions (310.9.16 when this
+   was written).
+2. Keep updating: a game update or Steam's "Verify integrity of game
+   files" puts the old files back, so check DLSS Swapper after patches.
+3. Test presets yourself and keep what plays best on your PC.
+   The author's setup (RTX 5080 Laptop, 4K 240 Hz): Super Resolution F,
+   Ray Reconstruction F, Frame Generation C. Preset F gave more FPS and
+   felt smoother than K there.
+The patcher keeps a preset you set in DLSS Swapper. The patcher itself
+never swaps DLLs; DLSS Swapper does, in a game with Easy Anti-Cheat.
+The author plays like this without problems, but it is your call.
 
 If something does not work, send a screenshot of the patcher window.

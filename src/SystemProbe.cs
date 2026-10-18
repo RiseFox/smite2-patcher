@@ -25,6 +25,10 @@ namespace Smite2Patcher
     {
         public GpuInfo Gpu = new GpuInfo();
         public string? DriverError;
+
+        /// <summary>DLSS-SR preset already in the game's driver profile; 0 when none is set.</summary>
+        public uint DriverPreset;
+
         public int RefreshHz;
         public int Width;
         public int Height;
@@ -53,6 +57,17 @@ namespace Smite2Patcher
                 catch (Exception error) when (error is NvDrsException || error is DllNotFoundException || error is EntryPointNotFoundException)
                 {
                     snapshot.DriverError = error.Message;
+                }
+            }
+            if (snapshot.DriverError == null && snapshot.Gpu.DriverVersion > 0)
+            {
+                try
+                {
+                    var preset = NvDrs.Read(PatchEngine.Executable, new[] { Nv.SrPreset }, out _)[0];
+                    snapshot.DriverPreset = preset.Existed ? preset.Value : 0;
+                }
+                catch (NvDrsException)
+                {
                 }
             }
 

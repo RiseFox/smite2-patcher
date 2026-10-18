@@ -19,6 +19,10 @@ namespace Smite2Patcher
     internal sealed class PatchPlan
     {
         public readonly List<DriverChange> Driver = new List<DriverChange>();
+
+        /// <summary>Driver settings the player picked themselves; the patcher leaves them alone.</summary>
+        public readonly List<uint> Kept = new List<uint>();
+
         public readonly List<string> Summary = new List<string>();
         public readonly List<string> Warnings = new List<string>();
         public readonly List<string> InGame = new List<string>();
@@ -53,7 +57,10 @@ namespace Smite2Patcher
             }
             if (overridesAllowed && pc.Gpu.IsRtx)
             {
-                plan.Summary.Add(Lang.T("Новіша модель DLSS від NVIDIA — чіткіша картинка в русі.", "Newer NVIDIA DLSS model — a sharper image in motion."));
+                plan.Summary.Add(plan.Kept.Contains(Nv.SrPreset)
+                    ? Lang.T("DLSS-пресет " + Nv.PresetName(pc.DriverPreset) + ", уже вибраний на цьому ПК, лишається як є.",
+                             "DLSS preset " + Nv.PresetName(pc.DriverPreset) + " already chosen on this PC stays as it is.")
+                    : Lang.T("Новіша модель DLSS від NVIDIA — чіткіша картинка в русі.", "Newer NVIDIA DLSS model — a sharper image in motion."));
             }
             if (plan.FrameGeneration)
             {
@@ -99,7 +106,15 @@ namespace Smite2Patcher
             {
                 plan.Driver.Add(new DriverChange(Nv.SrOverride, Nv.On));
                 plan.Driver.Add(new DriverChange(Nv.SrMode, Nv.SrModeGameControlled));
-                plan.Driver.Add(new DriverChange(Nv.SrPreset, Nv.PresetK));
+                // A preset picked in DLSS Swapper or the NVIDIA App is the player's call, not ours.
+                if (Nv.IsPlayerPreset(pc.DriverPreset))
+                {
+                    plan.Kept.Add(Nv.SrPreset);
+                }
+                else
+                {
+                    plan.Driver.Add(new DriverChange(Nv.SrPreset, Nv.PresetK));
+                }
             }
             else if (dlssCapable)
             {

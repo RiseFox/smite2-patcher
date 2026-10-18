@@ -1,6 +1,6 @@
-# SMITE 2 Patcher
+# SMITE 2 Patcher — lag & freeze fix
 
-**One click, and SMITE 2 runs right on any NVIDIA RTX PC.** The patcher detects your graphics card, monitor and driver, then sets up the NVIDIA driver, Steam and the game's own graphics for that exact machine. After that you just play: no launcher, nothing running in the background.
+**Fix SMITE 2 lag, freezes and FPS drops on NVIDIA RTX in one click.** The patcher detects your graphics card, monitor and driver, then sets up the NVIDIA driver, Steam and the game's own graphics for that exact machine. After that you just play: no launcher, nothing running in the background.
 
 [⬇ Download the latest release](https://github.com/RiseFox/smite2-patcher/releases/latest) · [Українською](README.uk.md)
 
@@ -9,12 +9,31 @@
   <img src="screenshots/patcher-uk.png" width="420" alt="SMITE 2 Patcher window in Ukrainian">
 </p>
 
+- **Fixes the real causes of lag and freezes.** Intel XeFG stealing the frames DLSS should show, uneven frame pacing with frame generation, settings too heavy for your card. [See exactly what gets fixed.](#lag--freeze-fix-what-gets-fixed)
 - **Built from evidence, not guesswork.** Every setting comes from reading SMITE 2's own logs and save files. Tweaks the game silently ignores are not in here.
 - **Fits your PC.** An RTX 3060 on a 75 Hz screen, a 4070 on 144 Hz and a 4070 SUPER on 240 Hz each get a different, sensible setup.
 - **Safe.** The patcher changes no game files, injects nothing and swaps no DLLs. Everything is backed up, and **Restore everything** puts it back byte for byte.
 - **Easy to check.** After one match the patcher reads the game log and shows whether DLSS actually ran on your NVIDIA GPU.
-- **Tiny.** About 170 KB and no installer. It runs on stock Windows 10/11, so you can send it to a friend over Discord.
+- **Tiny.** About 180 KB and no installer. It runs on stock Windows 10/11, so you can send it to a friend over Discord.
 - **Ukrainian and English.** The language follows Windows, and an EN / UA switch sits in the top corner.
+
+---
+
+## Lag & freeze fix: what gets fixed
+
+An honest list. Some freezes the patcher fixes for you, some need one setting or habit, and two can only be fixed by the game's developers.
+
+| You notice | Cause | Fix |
+|---|---|---|
+| Stutter and FPS drops although the GPU is strong; DLSS frame generation "on" but nothing changes | Intel XeFG takes over the swap chain, so DLSS never presents the frames and the CPU works harder | ✅ **Automatic.** Steam launch option `-XeFGOverrideSwapChainDisabled` |
+| Uneven motion or tearing with frame generation, FPS far above the refresh rate | Generated frames run past what the monitor can show | ✅ **Automatic.** Driver cap at refresh × 0.97 together with FG 2X (240 Hz → 232) |
+| FPS drops in team fights | Shadows, effects and shading too heavy for the card | ✅ **Automatic.** In-game preset matched to your GPU, laptop or desktop, and VRAM |
+| Tweaks from guides do nothing | The game ignores `Engine.ini`, `Scalability.ini`, `-ExecCmds=` and `-ini:` overrides | ✅ **Automatic.** Only routes the game really reads, old leftovers removed |
+| 0.2–0.6 s freeze after Alt-Tab or a click on the second monitor | Frame generation is rebuilt on every focus change | ⚙️ **One setting.** *Lock Cursor to Window: Locked*, and no Alt-Tab during a match |
+| Multi-second freeze in god select after a game or driver update | Shaders compile the first time each god and skin loads | ⚙️ **Habit.** Play one practice match after updates; never clear the NVIDIA shader cache |
+| FPS drops that build up during a long session on a laptop or mini PC | The GPU reaches its thermal target and lowers clocks | ⚙️ **Fan curve.** [See the tips](#more-tips-from-the-investigation) |
+| Remaining glitches and small hitches | Bugs in the older DLSS files the game ships | ⚙️ **Recommended.** [Update DLSS with DLSS Swapper](#recommended-update-dlss-with-dlss-swapper) |
+| A short hitch now and then; a pause while a match loads | Font-cache flush (`FontCache flush … 2/1 Textures`) and blocking loads (`FlushAsyncLoading`) | ❌ **Not fixable from outside.** The game ignores every file route for these; only Hi-Rez / Titan Forge can fix them |
 
 ---
 
@@ -31,8 +50,6 @@ SMITE 2 stuttered and dropped frames on an RTX 5080 Laptop GPU that handles othe
 | **Frame generation is rebuilt on every focus change.** Alt-Tab or a click on a second monitor means `NVSDK_NGX_CreateFeature` on return. | A 170–620 ms freeze each time. | Explains it, and suggests *Lock Cursor to Window: Locked*. |
 | **Shader compilation after patches**: `Waited for PSO creation for 3200ms` on the first pick of a god skin. | A multi-second freeze in god select. | Tells you to warm up in a practice match after a game or driver update. It happens once per skin, then the driver cache handles it. |
 
-Things we confirmed the patcher cannot fix from outside (the game ignores every file route): the Slate font-cache flush (`FontCache flush … 2/1 Textures`) and the blocking loads at match start (`FlushAsyncLoading`).
-
 ---
 
 ## What it does on your PC
@@ -43,7 +60,7 @@ The patcher looks at the machine it runs on: GPU name, laptop or desktop, video 
 
 | Setting | Value | When |
 |---|---|---|
-| DLSS Super Resolution model | **Preset K** (transformer). The DLSS mode stays under the game's control | RTX, driver 572 or newer |
+| DLSS Super Resolution model | **Preset K** (transformer). The DLSS mode stays under the game's control | RTX, driver 572 or newer, and only if no preset is chosen yet. A preset you picked in DLSS Swapper or the NVIDIA App stays |
 | DLSS Frame Generation | **2X, fixed** (no 3X/4X latency) | RTX 40/50 and a monitor of **200 Hz or more** |
 | Max Frame Rate | refresh × 0.97 (240 Hz → **232**) | only together with frame generation |
 
@@ -102,7 +119,7 @@ It shows which GPU the game used, whether DLSS started and at what resolutions, 
 - **Anti-cheat friendly.** No injection, no DLL replacement, no memory access. Everything is something you could also set by hand in the NVIDIA App, Steam and the game menu.
 - **Full backup.** The first run saves the original driver values, the launch options of every Steam account and copies of both game settings files under `%LOCALAPPDATA%\SMITE2-Patcher`. **Restore everything** puts them back byte for byte.
 - **Careful writing.** Steam's `localconfig.vdf` is edited in place, so the rest of the file stays exactly as it was. The game save is re-parsed after every write. If its format ever changes after a game update, the patcher leaves it alone and says so.
-- **Tested.** The automated end-to-end test (`--e2e-test`) runs apply → apply again → monitor change → restore against a throwaway driver profile and copies of real Steam and game files. All 17 checks pass, and restored files are identical to the originals.
+- **Tested.** The automated end-to-end test (`--e2e-test`) runs apply → apply again → monitor change → restore against a throwaway driver profile and copies of real Steam and game files. It also checks that a DLSS preset picked in DLSS Swapper survives both apply and restore. All 21 checks pass, and restored files are identical to the originals.
 
 This is a community tool. It is not affiliated with Hi-Rez Studios, Titan Forge Games or NVIDIA.
 
@@ -121,12 +138,28 @@ Run it again only when you change your monitor or GPU, or when an NVIDIA driver 
 
 ---
 
-## Tip: update DLSS with DLSS Swapper
+## Recommended: update DLSS with DLSS Swapper
 
-The patcher already makes the NVIDIA driver use its newest DLSS model through the official override, so this step is optional. If you also want newer DLSS files in the game folder, use **[DLSS Swapper](https://github.com/beeradmoore/dlss-swapper)**. It can swap `nvngx_dlss.dll`, `nvngx_dlssd.dll` and `nvngx_dlssg.dll`, and set DLSS presets per game.
+Honest advice from testing: **put the newest DLSS files into SMITE 2.** The game ships older DLSS DLLs, and swapping in the latest ones removed part of the remaining glitches and hitches. It works on top of the patcher. Use **[DLSS Swapper](https://github.com/beeradmoore/dlss-swapper)**:
 
-- It replaces DLLs in the game folder. Steam's *Verify integrity of game files* restores the originals, and a game update may do the same.
-- The author uses it with SMITE 2 without problems, but replacing files in an online game with Easy Anti-Cheat is **at your own risk**.
+1. Install DLSS Swapper and find SMITE 2 in its list.
+2. Swap **DLSS** (`nvngx_dlss.dll`), **DLSS Frame Generation** (`nvngx_dlssg.dll`) and **DLSS Ray Reconstruction** (`nvngx_dlssd.dll`) to the newest versions. At the time of writing that is **310.9.16**.
+3. **Keep updating.** New DLSS releases keep fixing bugs. A game update or Steam's *Verify integrity of game files* puts the old files back, so check DLSS Swapper after each patch.
+4. **Test presets yourself.** What looks and plays best depends on your card and screen. Change one preset, play a practice match, compare.
+
+**The author's setup** (RTX 5080 Laptop GPU, 4K 240 Hz, DLSS 310.9.16):
+
+| DLSS part | Preset |
+|---|---|
+| Super Resolution | **F** |
+| Ray Reconstruction | **F** (SMITE 2 does not seem to use it, so this one matters least) |
+| Frame Generation | **C** |
+
+On this PC preset F gave more FPS and felt smoother than K. K is the newer transformer model: sharper in motion, but heavier on the GPU. Try both.
+
+**DLSS Swapper and the patcher work together.** A preset you set in DLSS Swapper or the NVIDIA App goes into the same NVIDIA profile the patcher uses. The patcher (1.2.1 and newer) sees it and keeps it instead of setting K. *Restore everything* leaves it in place too.
+
+The patcher itself never swaps DLLs. DLSS Swapper replaces files in the game folder, and SMITE 2 uses Easy Anti-Cheat. The author has played with swapped DLLs without any problems, but this one step is your call.
 
 ## More tips from the investigation
 

@@ -122,7 +122,7 @@ namespace Smite2Patcher
                 {
                     var planned = plan.Driver.FirstOrDefault(change => change.Id == setting.Id);
                     report.AppendLine(string.Format("  0x{0:X8} existed={1} value={2} -> {3}",
-                        setting.Id, setting.Existed, setting.Value, planned != null ? planned.Value.ToString() : "unchanged"));
+                        setting.Id, setting.Existed, setting.Value, planned != null ? planned.Value.ToString() : plan.Kept.Contains(setting.Id) ? "kept (player's choice)" : "unchanged"));
                 }
                 var state = PatchEngine.ReadState(pc, plan);
                 report.AppendLine("State: driverApplied=" + state.DriverApplied + " steamApplied=" + state.SteamApplied + " backup=" + state.BackupExists);
@@ -259,10 +259,24 @@ namespace Smite2Patcher
                     "cap and FG removed again (" + dropped.Count + " settings)");
                 Expect(PatchEngine.ReadState(slowScreen, smallerPlan).FullyApplied, "120 Hz plan fully applied");
 
+                // The player later picks preset F in DLSS Swapper: apply and restore both leave it alone.
+                const uint presetF = 6;
+                NvDrs.Write(TestExe, new List<NvWrite> { new NvWrite(Nv.SrPreset, presetF, remove: false) });
+                var swapper = SystemProbe.Capture();
+                swapper.SteamPath = steam;
+                swapper.RefreshHz = 120;
+                var swapperPlan = PatchPlan.Build(swapper);
+                Expect(swapper.DriverPreset == presetF && swapperPlan.Kept.Contains(Nv.SrPreset) && swapperPlan.Driver.All(change => change.Id != Nv.SrPreset),
+                    "preset F from DLSS Swapper is kept, not replaced by K");
+                Expect(PatchEngine.ReadState(swapper, swapperPlan).FullyApplied, "kept preset still counts as fully applied");
+                PatchEngine.Apply(swapper, swapperPlan, true, line => report.AppendLine("  apply with preset F: " + line));
+                Expect(NvDrs.Read(TestExe, new[] { Nv.SrPreset }, out _)[0].Value == presetF, "apply leaves preset F");
+
                 PatchEngine.Restore(pc, true, line => report.AppendLine("  restore: " + line));
                 Expect(!File.Exists(BackupData.FilePath), "backup removed after restore");
                 var after = NvDrs.Read(TestExe, allIds, out _);
-                Expect(after.All(setting => !setting.Existed), "driver values removed again");
+                Expect(after.Where(setting => setting.Id != Nv.SrPreset).All(setting => !setting.Existed), "driver values removed again");
+                Expect(after.Any(setting => setting.Id == Nv.SrPreset && setting.Existed && setting.Value == presetF), "restore leaves the player's preset F");
                 foreach (var pair in originals)
                 {
                     Expect(File.ReadAllText(pair.Key) == pair.Value, "account " + SteamClient.AccountOf(pair.Key) + " config identical after restore");

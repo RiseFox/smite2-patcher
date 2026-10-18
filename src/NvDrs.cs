@@ -22,11 +22,18 @@ namespace Smite2Patcher
         public const uint On = 1;
         public const uint SrModeGameControlled = 3;
         public const uint PresetK = 11;
+        public const uint PresetLatest = 0xFFFFFF;
         public const uint FgModeOn = 2;
         public const uint OneGeneratedFrame = 1;
 
         // DLSS 4 overrides (preset K, FG multiplier) arrived in driver 572.
         public const uint MinOverrideDriver = 57200;
+
+        /// <summary>A preset picked outside the patcher (DLSS Swapper, NVIDIA App). 0 is "Off", K is the patcher's own.</summary>
+        public static bool IsPlayerPreset(uint value) => value != 0 && value != PresetK;
+
+        public static string PresetName(uint value) =>
+            value == PresetLatest ? Lang.T("«найновіший»", "\"Latest\"") : LastGame.PresetLetter((int)value);
     }
 
     internal sealed class NvSetting

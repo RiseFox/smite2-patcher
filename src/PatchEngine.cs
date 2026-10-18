@@ -188,7 +188,19 @@ namespace Smite2Patcher
 
             if (backup.Driver.Count > 0)
             {
-                NvDrs.Write(Executable, backup.Driver.Select(item => new NvWrite(item.Id, item.Value, remove: !item.Existed)).ToList());
+                // The patcher only ever writes preset K, so any other preset was picked after the patch: keep it.
+                var restore = backup.Driver;
+                if (backup.Driver.Any(item => item.Id == Nv.SrPreset))
+                {
+                    var preset = NvDrs.Read(Executable, new[] { Nv.SrPreset }, out _)[0];
+                    if (preset.Existed && Nv.IsPlayerPreset(preset.Value))
+                    {
+                        restore = backup.Driver.Where(item => item.Id != Nv.SrPreset).ToList();
+                        log(Lang.T("✓ DLSS-пресет " + Nv.PresetName(preset.Value) + ", вибраний після патча, лишається.",
+                                   "✓ DLSS preset " + Nv.PresetName(preset.Value) + ", chosen after the patch, stays."));
+                    }
+                }
+                NvDrs.Write(Executable, restore.Select(item => new NvWrite(item.Id, item.Value, remove: !item.Existed)).ToList());
                 log(Lang.T("✓ Профіль NVIDIA повернуто, як було до патча.", "✓ NVIDIA profile restored to how it was before the patch."));
             }
 
@@ -312,7 +324,7 @@ namespace Smite2Patcher
         }
 
         private static List<DriverBackup> StaleDriverSettings(BackupData backup, PatchPlan plan) =>
-            backup.Driver.Where(item => plan.Driver.All(change => change.Id != item.Id)).ToList();
+            backup.Driver.Where(item => plan.Driver.All(change => change.Id != item.Id) && !plan.Kept.Contains(item.Id)).ToList();
 
         public static bool RestoreNeedsSteamClosed() => (LoadBackup()?.Steam.Count ?? 0) > 0;
 

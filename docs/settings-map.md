@@ -51,7 +51,7 @@ Other keys in the map: `Resolution` and `ScreenMode` (menu indices), `GlobalQual
 |---|---|---|
 | DLSS-SR override | `0x10E41E01` | 1 |
 | DLSS-SR performance mode | `0x10AFB768` | 3 (snippet/game controlled, so the in-game mode applies) |
-| DLSS-SR preset | `0x10E41DF3` | 11 (K) |
+| DLSS-SR preset | `0x10E41DF3` | 11 (K), only when the profile holds no other preset (0 = Off). A preset set in DLSS Swapper or the NVIDIA App is kept, also on restore |
 | DLSS-FG override | `0x10E41E03` | 1 (FG plans only) |
 | DLSS-G mode | `0x10308298` | 2 (On) |
 | DLSS-G multi-frame count | `0x104D6667` | 1 (2X) |
