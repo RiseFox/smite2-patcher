@@ -1,0 +1,6 @@
+artifacts/
+release/
+src/bin/
+src/obj/
+*.user
+.vs/
