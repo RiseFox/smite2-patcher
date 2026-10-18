@@ -29,6 +29,9 @@ namespace Smite2Patcher
         /// <summary>DLSS-SR preset already in the game's driver profile; 0 when none is set.</summary>
         public uint DriverPreset;
 
+        /// <summary>Newest DLSS Super Resolution in NVIDIA's own store, which the driver override loads; "" when none.</summary>
+        public string NvidiaDlssVersion = "";
+
         public int RefreshHz;
         public int Width;
         public int Height;
@@ -71,6 +74,11 @@ namespace Smite2Patcher
                 }
             }
 
+            if (snapshot.Gpu.IsRtx)
+            {
+                snapshot.NvidiaDlssVersion = ReadNvidiaDlssVersion();
+            }
+
             ReadPrimaryDisplay(snapshot);
             snapshot.HardwareScheduling = ReadHardwareScheduling();
             snapshot.SteamPath = SteamClient.FindSteamPath();
@@ -88,6 +96,35 @@ namespace Smite2Patcher
         }
 
         public static bool IsRunning(string processName) => Process.GetProcessesByName(processName).Length > 0;
+
+        private static string ReadNvidiaDlssVersion()
+        {
+            try
+            {
+                var store = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "NVIDIA", "NGX", "models", "dlss", "versions");
+                if (!Directory.Exists(store))
+                {
+                    return "";
+                }
+                var newest = Directory.GetDirectories(store)
+                    .Select(dir => (Dir: dir, Number: long.TryParse(Path.GetFileName(dir), out long number) ? number : -1))
+                    .Where(item => item.Number > 0)
+                    .OrderByDescending(item => item.Number)
+                    .FirstOrDefault();
+                if (newest.Dir == null)
+                {
+                    return "";
+                }
+                var binary = Directory.GetFiles(newest.Dir, "*.bin", SearchOption.AllDirectories).FirstOrDefault();
+                var version = binary != null ? LastGame.FileVersion(binary) : "";
+                // Folder names pack the version as major << 16 | minor << 8 | patch (20318480 = 310.9.16).
+                return version.Length > 0 ? version : (newest.Number >> 16) + "." + ((newest.Number >> 8) & 0xFF) + "." + (newest.Number & 0xFF);
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                return "";
+            }
+        }
 
         private static GpuInfo ReadGpu()
         {

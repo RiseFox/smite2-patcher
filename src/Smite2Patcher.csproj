@@ -14,7 +14,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>SMITE2-Patcher</AssemblyName>
     <RootNamespace>Smite2Patcher</RootNamespace>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <Product>SMITE 2 Patcher</Product>
     <Description>One-click NVIDIA, Steam and in-game setup for SMITE 2.</Description>
     <ApplicationManifest>app.manifest</ApplicationManifest>

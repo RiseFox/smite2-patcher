@@ -108,7 +108,7 @@ namespace Smite2Patcher
             report.AppendLine("Display: " + pc.Width + "x" + pc.Height + " @" + pc.RefreshHz + " Hz | HAGS=" + (pc.HardwareScheduling?.ToString() ?? "default"));
             report.AppendLine("Steam: " + (pc.SteamPath ?? "-") + " running=" + pc.SteamRunning + " | game installed=" + pc.GameInstalled + " running=" + pc.GameRunning);
             report.AppendLine("Supported: " + plan.Supported + (plan.BlockReason != null ? " (" + plan.BlockReason + ")" : ""));
-            report.AppendLine("FG=" + plan.FrameGeneration + " cap=" + plan.FrameCap + " steamFlag=" + plan.SteamFlag);
+            report.AppendLine("FG=" + plan.FrameGeneration + " cap=" + plan.FrameCap + " steamFlag=" + plan.SteamFlag + " nvidiaDlss=" + (pc.NvidiaDlssVersion.Length > 0 ? pc.NvidiaDlssVersion : "-"));
             plan.Summary.ForEach(line => report.AppendLine("  + " + line));
             plan.Warnings.ForEach(line => report.AppendLine("  ! " + line));
             plan.InGame.ForEach(line => report.AppendLine("  game: " + line));
@@ -317,7 +317,9 @@ namespace Smite2Patcher
                               " xefgFlag=" + game.XeFgFlagObeyed + " xefgOwns=" + game.XeFgOwnsFrames +
                               " dlss=" + (game.DlssActive ? game.DlssInput + "->" + game.DlssOutput : "no") +
                               " preset=" + (game.SrPresetApplied > 0 ? LastGame.PresetLetter(game.SrPresetApplied) : "-") +
-                              " fg=" + game.FrameGenerationUsed);
+                              " fg=" + game.FrameGenerationUsed +
+                              " dlssBinary=" + (game.DlssVersion.Length > 0 ? game.DlssVersion : "?") + (game.DlssFromNvidia ? "@nvidia" : "@game") +
+                              " fgBinary=" + (game.FgVersion.Length > 0 ? game.FgVersion : "?") + (game.FgFromNvidia ? "@nvidia" : "@game"));
         }
 
         /// <summary>Plans for typical friend PCs, without reading or writing anything.</summary>

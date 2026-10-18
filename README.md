@@ -32,7 +32,7 @@ An honest list. Some freezes the patcher fixes for you, some need one setting or
 | 0.2–0.6 s freeze after Alt-Tab or a click on the second monitor | Frame generation is rebuilt on every focus change | ⚙️ **One setting.** *Lock Cursor to Window: Locked*, and no Alt-Tab during a match |
 | Multi-second freeze in god select after a game or driver update | Shaders compile the first time each god and skin loads | ⚙️ **Habit.** Play one practice match after updates; never clear the NVIDIA shader cache |
 | FPS drops that build up during a long session on a laptop or mini PC | The GPU reaches its thermal target and lowers clocks | ⚙️ **Fan curve.** [See the tips](#more-tips-from-the-investigation) |
-| Remaining glitches and small hitches | Bugs in the older DLSS files the game ships | ⚙️ **Recommended.** [Update DLSS with DLSS Swapper](#recommended-update-dlss-with-dlss-swapper) |
+| Remaining glitches and small hitches | Bugs in the older DLSS files the game ships | ✅ **Automatic.** The driver override loads NVIDIA's own up-to-date DLSS instead. [How to check](#keep-dlss-up-to-date) |
 | A short hitch now and then; a pause while a match loads | Font-cache flush (`FontCache flush … 2/1 Textures`) and blocking loads (`FlushAsyncLoading`) | ❌ **Not fixable from outside.** The game ignores every file route for these; only Hi-Rez / Titan Forge can fix them |
 
 ---
@@ -60,7 +60,7 @@ The patcher looks at the machine it runs on: GPU name, laptop or desktop, video 
 
 | Setting | Value | When |
 |---|---|---|
-| DLSS Super Resolution model | **Preset K** (transformer). The DLSS mode stays under the game's control | RTX, driver 572 or newer, and only if no preset is chosen yet. A preset you picked in DLSS Swapper or the NVIDIA App stays |
+| DLSS Super Resolution | The official DLSS override, so the driver uses NVIDIA's own up-to-date DLSS, and **Preset K** (transformer). The DLSS mode stays under the game's control | RTX, driver 572 or newer, and only if no preset is chosen yet. A preset you picked in DLSS Swapper or the NVIDIA App stays |
 | DLSS Frame Generation | **2X, fixed** (no 3X/4X latency) | RTX 40/50 and a monitor of **200 Hz or more** |
 | Max Frame Rate | refresh × 0.97 (240 Hz → **232**) | only together with frame generation |
 
@@ -138,28 +138,45 @@ Run it again only when you change your monitor or GPU, or when an NVIDIA driver 
 
 ---
 
-## Recommended: update DLSS with DLSS Swapper
+## Keep DLSS up to date
 
-Honest advice from testing: **put the newest DLSS files into SMITE 2.** The game ships older DLSS DLLs, and swapping in the latest ones removed part of the remaining glitches and hitches. It works on top of the patcher. Use **[DLSS Swapper](https://github.com/beeradmoore/dlss-swapper)**:
+Newer DLSS versions fix bugs of their own, so run the newest one. **With the patcher, NVIDIA does this for you.** The patcher turns on the driver's official DLSS override. With the override on, SMITE 2 stops using the DLSS files that ship with the game. The driver loads its own copy from `C:\ProgramData\NVIDIA\NGX\models` instead, and NVIDIA keeps that copy updated. The game's own log shows it:
 
-1. Install DLSS Swapper and find SMITE 2 in its list.
-2. Swap **DLSS** (`nvngx_dlss.dll`), **DLSS Frame Generation** (`nvngx_dlssg.dll`) and **DLSS Ray Reconstruction** (`nvngx_dlssd.dll`) to the newest versions. At the time of writing that is **310.9.16**.
-3. **Keep updating.** New DLSS releases keep fixing bugs. A game update or Steam's *Verify integrity of game files* puts the old files back, so check DLSS Swapper after each patch.
-4. **Test presets yourself.** What looks and plays best depends on your card and screen. Change one preset, play a practice match, compare.
+```
+Built with APP_NAME = nvapp_override
+Loaded from path "C:\ProgramData\NVIDIA\NGX\models\dlss\versions\20318480\files/160_E658700.bin"
+feature dlss snippet: …\160_E658700.bin version: 310.9.16
+```
 
-**The author's setup** (RTX 5080 Laptop GPU, 4K 240 Hz, DLSS 310.9.16):
+The plan in the patcher window shows the DLSS version NVIDIA has on your PC. After a match, the **Last game** row shows which DLSS really ran and where it came from: `310.9.16 via NVIDIA` or `from game files`.
+
+| DLSS part | Driver override | Where SMITE 2 loads it from |
+|---|---|---|
+| Super Resolution | on (patcher) | NVIDIA's store, always the version NVIDIA last downloaded |
+| Frame Generation | on (patcher, when FG is part of the plan) | NVIDIA's store |
+| Ray Reconstruction | off: the NVIDIA App lists RR as *Unsupported* for SMITE 2 | the game folder (`nvngx_dlssd.dll`). The game loads it but does not render with it |
+
+So while the override is on, swapping the Super Resolution and Frame Generation DLLs in the game folder does not change what runs. The **Last game** row is the quick way to check.
+
+### Where DLSS Swapper still helps
+
+**[DLSS Swapper](https://github.com/beeradmoore/dlss-swapper)** is still a great companion:
+
+- **Presets.** Presets from DLSS Swapper or the NVIDIA App (*Graphics → SMITE 2 → DLSS Override – Model Presets → Custom*) land in the same NVIDIA profile the patcher uses. The patcher (1.2.1 and newer) keeps a preset you chose instead of setting K, and *Restore everything* leaves it in place.
+- **PCs without the override.** With no patcher or a driver older than 572, the game uses its own DLSS files, and DLSS Swapper is how you update them.
+- **Seeing versions** of every DLSS file a game has.
+
+**Test presets yourself.** What looks and plays best depends on your card and screen. Change one preset, play a practice match, compare. **The author's setup** (RTX 5080 Laptop GPU, 4K 240 Hz, DLSS 310.9.16):
 
 | DLSS part | Preset |
 |---|---|
 | Super Resolution | **F** |
-| Ray Reconstruction | **F** (SMITE 2 does not seem to use it, so this one matters least) |
 | Frame Generation | **C** |
+| Ray Reconstruction | not used: *Unsupported* for SMITE 2 in the NVIDIA App |
 
 On this PC preset F gave more FPS and felt smoother than K. K is the newer transformer model: sharper in motion, but heavier on the GPU. Try both.
 
-**DLSS Swapper and the patcher work together.** A preset you set in DLSS Swapper or the NVIDIA App goes into the same NVIDIA profile the patcher uses. The patcher (1.2.1 and newer) sees it and keeps it instead of setting K. *Restore everything* leaves it in place too.
-
-The patcher itself never swaps DLLs. DLSS Swapper replaces files in the game folder, and SMITE 2 uses Easy Anti-Cheat. The author has played with swapped DLLs without any problems, but this one step is your call.
+The patcher itself never swaps DLLs. DLSS Swapper replaces files in the game folder, and SMITE 2 uses Easy Anti-Cheat. The author has played with swapped DLLs without any problems, but that step is your call.
 
 ## More tips from the investigation
 

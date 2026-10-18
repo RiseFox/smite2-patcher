@@ -331,9 +331,13 @@ namespace Smite2Patcher
                 parts.Add(game.AdapterIsNvidia ? "NVIDIA ✓" : Lang.T("✗ гра йшла на ", "✗ the game ran on ") + game.Adapter);
                 problem |= !game.AdapterIsNvidia;
             }
+            var source = game.DlssVersion.Length > 0 || game.DlssFromNvidia
+                ? ", " + (game.DlssVersion.Length > 0 ? game.DlssVersion + " " : "") +
+                  (game.DlssFromNvidia ? Lang.T("від NVIDIA", "via NVIDIA") : Lang.T("з файлів гри", "from game files"))
+                : "";
             parts.Add(game.DlssActive
                 ? "DLSS ✓ " + game.DlssInput + " → " + game.DlssOutput +
-                  (game.SrPresetApplied > 0 ? ", Preset " + LastGame.PresetLetter(game.SrPresetApplied) : "")
+                  (game.SrPresetApplied > 0 ? ", Preset " + LastGame.PresetLetter(game.SrPresetApplied) : "") + source
                 : Lang.T("DLSS не вмикався — вибери DLSS у графіці гри", "DLSS did not start — pick DLSS in the game's graphics settings"));
             if (game.XeFgOwnsFrames)
             {

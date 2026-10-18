@@ -57,10 +57,15 @@ namespace Smite2Patcher
             }
             if (overridesAllowed && pc.Gpu.IsRtx)
             {
+                // The override makes the driver load DLSS from its own store, which NVIDIA keeps updating.
+                var known = pc.NvidiaDlssVersion.Length > 0;
+                var leadUk = known ? "Свіжий DLSS " + pc.NvidiaDlssVersion : "DLSS";
+                var leadEn = known ? "Up-to-date DLSS " + pc.NvidiaDlssVersion : "DLSS";
                 plan.Summary.Add(plan.Kept.Contains(Nv.SrPreset)
-                    ? Lang.T("DLSS-пресет " + Nv.PresetName(pc.DriverPreset) + ", уже вибраний на цьому ПК, лишається як є.",
-                             "DLSS preset " + Nv.PresetName(pc.DriverPreset) + " already chosen on this PC stays as it is.")
-                    : Lang.T("Новіша модель DLSS від NVIDIA — чіткіша картинка в русі.", "Newer NVIDIA DLSS model — a sharper image in motion."));
+                    ? Lang.T(leadUk + " напряму від NVIDIA, а не з файлів гри. Пресет " + Nv.PresetName(pc.DriverPreset) + ", уже вибраний на цьому ПК, лишається.",
+                             leadEn + " straight from NVIDIA instead of the game's files. Preset " + Nv.PresetName(pc.DriverPreset) + ", already chosen on this PC, stays.")
+                    : Lang.T(leadUk + " напряму від NVIDIA, а не з файлів гри, модель K — чіткіша картинка в русі.",
+                             leadEn + " straight from NVIDIA instead of the game's files, model K — a sharper image in motion."));
             }
             if (plan.FrameGeneration)
             {

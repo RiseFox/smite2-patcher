@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace Smite2Patcher
@@ -20,6 +21,13 @@ namespace Smite2Patcher
         public int SrPresetApplied = -1;
         public bool FrameGenerationUsed;
 
+        // Which DLSS binaries NGX loaded. With the driver override they come from NVIDIA's own
+        // store (C:\ProgramData\NVIDIA\NGX\models), not from the game folder.
+        public string DlssVersion = "";
+        public bool DlssFromNvidia;
+        public string FgVersion = "";
+        public bool FgFromNvidia;
+
         public bool DlssActive => DlssOutput.Length > 0;
         public bool XeFgOwnsFrames => SwapChainProvider.IndexOf("XeFG", StringComparison.OrdinalIgnoreCase) >= 0;
 
@@ -36,7 +44,10 @@ namespace Smite2Patcher
 
             var game = new LastGame { When = File.GetLastWriteTime(path) };
             var adapters = new Dictionary<string, string>();
+            var snippetVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             string? chosen = null;
+            string? srBinary = null;
+            string? fgBinary = null;
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
             using (var reader = new StreamReader(stream))
             {
@@ -92,15 +103,89 @@ namespace Smite2Patcher
                     {
                         game.FrameGenerationUsed = true;
                     }
+                    else if ((index = line.IndexOf("] Loaded from path \"", StringComparison.Ordinal)) >= 0)
+                    {
+                        // [NGXInitLog:226] Loaded from path "C:\ProgramData\NVIDIA\NGX\models\dlss\versions\20318480\files/160_E658700.bin" by ...
+                        var start = index + 20;
+                        var end = line.IndexOf('"', start);
+                        var binary = end > start ? line.Substring(start, end - start) : "";
+                        var kind = BinaryKind(binary);
+                        if (kind == "dlss")
+                        {
+                            srBinary = binary;
+                        }
+                        else if (kind == "dlssg")
+                        {
+                            fgBinary = binary;
+                        }
+                    }
+                    else if ((index = line.IndexOf(" snippet: ", StringComparison.Ordinal)) >= 0)
+                    {
+                        // app 86AA7B4 feature dlss snippet: C:\ProgramData\...\160_E658700.bin version: 310.9.16
+                        var version = line.IndexOf(" version: ", index, StringComparison.Ordinal);
+                        if (version > index)
+                        {
+                            snippetVersions[line.Substring(index + 10, version - index - 10)] = line.Substring(version + 10).Trim();
+                        }
+                    }
                 }
             }
 
+            if (srBinary != null)
+            {
+                game.DlssFromNvidia = IsNvidiaStore(srBinary);
+                game.DlssVersion = BinaryVersion(srBinary, snippetVersions);
+            }
+            if (fgBinary != null)
+            {
+                game.FgFromNvidia = IsNvidiaStore(fgBinary);
+                game.FgVersion = BinaryVersion(fgBinary, snippetVersions);
+            }
             if (chosen != null && adapters.TryGetValue(chosen, out string? name))
             {
                 game.Adapter = name;
             }
             game.AdapterIsNvidia = game.Adapter.IndexOf("NVIDIA", StringComparison.OrdinalIgnoreCase) >= 0;
             return game;
+        }
+
+        /// <summary>"dlss" (Super Resolution), "dlssg" (Frame Generation), "dlssd" (Ray Reconstruction) or "".</summary>
+        private static string BinaryKind(string path)
+        {
+            var lower = path.Replace('/', '\\').ToLowerInvariant();
+            foreach (var kind in new[] { "dlssd", "dlssg", "dlss" })
+            {
+                if (lower.Contains(@"\models\" + kind + @"\") || lower.EndsWith(@"\nvngx_" + kind + ".dll", StringComparison.Ordinal))
+                {
+                    return kind;
+                }
+            }
+            return "";
+        }
+
+        private static bool IsNvidiaStore(string path) =>
+            path.Replace('/', '\\').IndexOf(@"\NVIDIA\NGX\models\", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static string BinaryVersion(string path, Dictionary<string, string> snippetVersions)
+        {
+            if (snippetVersions.TryGetValue(path, out string? version))
+            {
+                return version;
+            }
+            try
+            {
+                return File.Exists(path) ? FileVersion(path) : "";
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                return "";
+            }
+        }
+
+        public static string FileVersion(string path)
+        {
+            var info = FileVersionInfo.GetVersionInfo(path);
+            return info.FileMajorPart > 0 ? info.FileMajorPart + "." + info.FileMinorPart + "." + info.FileBuildPart : "";
         }
 
         public static string PresetLetter(int value) => value >= 1 && value <= 26 ? ((char)('A' + value - 1)).ToString() : value.ToString();
